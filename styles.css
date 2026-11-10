@@ -5855,6 +5855,320 @@ body.light-mode .menu-card::after {
         transition: none !important;
     }
 }
+/* ============================================================
+   PANAFEST 2027 — MODULE CARD PHONE-APP REDESIGN v7
+   ------------------------------------------------------------
+   Turns each module card into a phone-app-style tile:
+     • The <i> icon becomes a large rounded-square accent tile
+       (like an iOS/Android app icon)
+     • Module name sits BELOW the tile, larger and bolder
+     • Module description stays below the name (sized down)
+   CSS-only. No HTML or JS changes.
+   ============================================================ */
 
+/* ---------- ICON → PHONE-APP TILE ---------- */
+.menu-card i {
+    /* flexbox centres the FontAwesome glyph inside the tile */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    /* Phone-app tile geometry */
+    width: 76px !important;
+    height: 76px !important;
+    border-radius: 20px !important;
+    margin: 0 auto 14px !important;
+
+    /* Accent-color gradient background */
+    background: linear-gradient(
+        145deg,
+        rgba(var(--module-accent-rgb, 255, 215, 0), 1)    0%,
+        rgba(var(--module-accent-rgb, 255, 215, 0), 0.72) 100%
+    ) !important;
+
+    /* White icon on the accent background */
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    font-size: 2rem !important;
+    line-height: 1 !important;
+
+    /* Depth: outer glow + inset shine */
+    box-shadow:
+        0 10px 24px rgba(var(--module-accent-rgb, 255, 215, 0), 0.40),
+        0 4px 10px rgba(0, 0, 0, 0.40),
+        inset 0 1.5px 0 rgba(255, 255, 255, 0.45),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.20) !important;
+
+    /* Dark halo behind glyph — guarantees contrast on light accents */
+    text-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.45),
+        0 1px 2px rgba(0, 0, 0, 0.55) !important;
+    filter: none !important;
+
+    /* Disable old float + breathe (they assumed a bare gold glyph) */
+    animation: none !important;
+    translate: none !important;
+    transform: none !important;
+}
+
+/* Slight scale-up on card hover for tactile feedback */
+.menu-card:hover i {
+    transform: scale(1.06) !important;
+    transition: transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1) !important;
+    box-shadow:
+        0 14px 32px rgba(var(--module-accent-rgb, 255, 215, 0), 0.55),
+        0 6px 14px rgba(0, 0, 0, 0.45),
+        inset 0 1.5px 0 rgba(255, 255, 255, 0.50),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.22) !important;
+}
+
+/* Subtle press-down on tap */
+.menu-card:active i {
+    transform: scale(0.93) !important;
+    transition: transform 0.12s ease !important;
+}
+
+/* ---------- MODULE NAME — below tile, larger ---------- */
+.menu-card h3 {
+    font-size: 1.15rem !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    letter-spacing: 0.3px !important;
+    margin: 0 0 6px 0 !important;
+    /* Text colour stays as set by v6 bright-text fix */
+}
+
+/* ---------- DESCRIPTION — kept, tightened ---------- */
+.menu-card p {
+    font-size: 0.78rem !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+    /* Text colour stays as set by v6 bright-text fix */
+}
+
+/* ---------- DARK MODE — richer gradient ---------- */
+body:not(.light-mode) .menu-card i {
+    background: linear-gradient(
+        145deg,
+        rgba(var(--module-accent-rgb, 255, 215, 0), 1.00) 0%,
+        rgba(var(--module-accent-rgb, 255, 215, 0), 0.60) 100%
+    ) !important;
+}
+
+/* ---------- LIGHT MODE — deeper gradient for contrast ---------- */
+body.light-mode .menu-card i {
+    background: linear-gradient(
+        145deg,
+        rgba(var(--module-accent-rgb, 0, 0, 0), 1.00) 0%,
+        rgba(var(--module-accent-rgb, 0, 0, 0), 0.78) 100%
+    ) !important;
+    box-shadow:
+        0 10px 24px rgba(var(--module-accent-rgb, 0, 0, 0), 0.32),
+        0 4px 10px rgba(0, 0, 0, 0.22),
+        inset 0 2px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* ============================================================
+   RESPONSIVE — shrink tile & type proportionally
+   ============================================================ */
+@media (max-width: 768px) {
+    .menu-card {
+        padding: 14px 8px 12px !important;
+    }
+    .menu-card i {
+        width: 60px !important;
+        height: 60px !important;
+        border-radius: 16px !important;
+        font-size: 1.6rem !important;
+        margin-bottom: 10px !important;
+        box-shadow:
+            0 6px 14px rgba(var(--module-accent-rgb, 255, 215, 0), 0.35),
+            0 3px 6px rgba(0, 0, 0, 0.38),
+            inset 0 1px 0 rgba(255, 255, 255, 0.40),
+            inset 0 -1.5px 3px rgba(0, 0, 0, 0.18) !important;
+    }
+    .menu-card h3 {
+        font-size: 0.85rem !important;
+        margin-bottom: 3px !important;
+        letter-spacing: 0.2px !important;
+    }
+    .menu-card p {
+        font-size: 0.62rem !important;
+        font-weight: 500 !important;
+    }
+    body.light-mode .menu-card p {
+        font-weight: 600 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .menu-card {
+        padding: 12px 6px 10px !important;
+    }
+    .menu-card i {
+        width: 52px !important;
+        height: 52px !important;
+        border-radius: 14px !important;
+        font-size: 1.4rem !important;
+        margin-bottom: 8px !important;
+    }
+    .menu-card h3 {
+        font-size: 0.78rem !important;
+    }
+    .menu-card p {
+        font-size: 0.56rem !important;
+    }
+}
+
+/* ---------- Reduced-motion safety ---------- */
+@media (prefers-reduced-motion: reduce) {
+    .menu-card i,
+    .menu-card:hover i,
+    .menu-card:active i {
+        transition: none !important;
+        transform: none !important;
+    }
+}
+/* ============================================================
+   PANAFEST 2027 — MODULE NAME BELOW CARD v8 (iPhone-style)
+   ------------------------------------------------------------
+   Name (<h3>) moves OUT of the card and floats directly below
+   it, like an iPhone home-screen app label.
+   Description (<p>) stays inside the card as requested.
+   Card 3D, tilt, hover, sound, slideshow — all preserved.
+   ============================================================ */
+
+/* More vertical space between rows — makes room for the name below each card */
+.menu-grid {
+    row-gap: 48px !important;   /* desktop — was 22px */
+}
+
+/* Card must not clip its absolutely-positioned child (h3) */
+.menu-card {
+    overflow: visible !important;
+}
+
+/* === THE NAME — pushed out of the card, below it, centered === */
+.menu-card h3 {
+    position: absolute !important;
+    top: calc(100% + 8px) !important;   /* 8px breathing room below card */
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+    padding: 0 4px !important;
+    text-align: center !important;
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    letter-spacing: 0.3px !important;
+    z-index: 10 !important;
+    cursor: pointer;                    /* feels clickable like the card */
+    /* colour + text-shadow inherited from v6 bright-text rules */
+}
+
+/* Tighter gap between icon and description (name no longer sits between them) */
+.menu-card i {
+    margin-bottom: 10px !important;
+}
+
+/* Light-mode extra contrast for the label against the slideshow backdrop */
+body.light-mode .menu-card h3 {
+    text-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95),
+        0 1px 2px rgba(255, 255, 255, 0.70),
+        0 1px 4px rgba(0, 0, 0, 0.22),
+        0 2px 8px rgba(0, 0, 0, 0.14) !important;
+}
+
+/* ============================================================
+   RESPONSIVE — scale gaps, font, and last-row padding
+   ============================================================ */
+@media (max-width: 768px) {
+    .menu-grid {
+        row-gap: 42px !important;   /* was 16px */
+    }
+    .menu-card h3 {
+        top: calc(100% + 6px) !important;
+        font-size: 0.85rem !important;
+        letter-spacing: 0.2px !important;
+    }
+    /* Reserve room below the last row's name (slideshow container clips overflow) */
+    #menuPage.menu-page {
+        padding-bottom: 60px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .menu-grid {
+        row-gap: 38px !important;   /* was 13px */
+    }
+    .menu-card h3 {
+        top: calc(100% + 5px) !important;
+        font-size: 0.78rem !important;
+    }
+    #menuPage.menu-page {
+        padding-bottom: 56px !important;
+    }
+}
+
+/* ============================================================
+   PANAFEST 2027 — MODULE NAME LIGHT-MODE LEGIBILITY v9
+   ------------------------------------------------------------
+   Earlier light-mode rules added heavy WHITE text-shadows around
+   the black module name. On the light slideshow backdrop those
+   white halos blur the letterforms and make them look washed out.
+   This rule REPLACES them with sharp dark shadows only → crisp,
+   clearly readable black text on any backdrop.
+   ============================================================ */
+
+body.light-mode .menu-card h3 {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    /* NO WHITE HALO — dark outline shadows only, for crisp edges */
+    text-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.55),
+        0 0 1px   rgba(0, 0, 0, 0.75),
+        0 2px 6px rgba(0, 0, 0, 0.28) !important;
+    /* Belt-and-braces: kill any inherited filter blur */
+    filter: none !important;
+}
+
+/* Mobile — slightly stronger shadow to stay crisp at the smaller size */
+@media (max-width: 768px) {
+    body.light-mode .menu-card h3 {
+        text-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.60),
+            0 0 1px   rgba(0, 0, 0, 0.80),
+            0 1px 4px rgba(0, 0, 0, 0.30) !important;
+    }
+}
+/* OPTIONAL — swap in place of the v9 block above if banner photos are busy */
+@media (max-width: 768px) {
+    body.light-mode .menu-card h3 {
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
+        text-shadow:
+            0 1px 1px rgba(0, 0, 0, 0.30),
+            0 0 1px   rgba(0, 0, 0, 0.55) !important;
+
+        /* Frosted pill — guarantees readability on any background */
+        background: rgba(255, 255, 255, 0.82) !important;
+        -webkit-backdrop-filter: blur(8px) saturate(120%);
+        backdrop-filter: blur(8px) saturate(120%);
+        padding: 3px 10px !important;
+        border-radius: 8px !important;
+        box-shadow:
+            0 2px 8px rgba(0, 0, 0, 0.12),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+
+        /* Shrink-wrap to text, stay centered below the card */
+        width: fit-content !important;
+        max-width: calc(100% - 12px) !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+    }
+}
 /* ---------- Safety net — if the banner image fails to load, the
    layered gradients still give a premium backdrop. Nothing breaks. ---------- */
