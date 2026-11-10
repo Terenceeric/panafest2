@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>PANAFEST 2027 · Event Management Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(12px); z-index: 10001; display: none; justify-content: center; align-items: center; flex-direction: column; gap: 24px; }
+        .loading-overlay.active { display: flex; }
+        .loading-spinner { width: 70px; height: 70px; border: 4px solid rgba(255,215,0,0.15); border-top: 4px solid var(--gold-primary); border-right: 4px solid var(--gold-secondary); border-radius: 50%; animation: spin 1s linear infinite; box-shadow: 0 0 30px rgba(255,215,0,0.3); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: var(--gold-primary); font-size: 1.3rem; font-weight: 700; letter-spacing: 3px; }
+        .loading-subtext { color: var(--text-secondary); font-size: 0.9rem; max-width: 300px; text-align: center; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 50px; border: 1px solid rgba(255,215,0,0.2); }
+        body.loading-active { overflow: hidden; }
+        .panafest-logo-img { height: 100%; width: 100%; object-fit: contain; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">PROCESSING</div>
+        <div class="loading-subtext">Please wait — we are preparing your PANAFEST experience.</div>
+    </div>
+
+    <!-- ============================ AUTH MODAL ============================ -->
+    <div id="authModal" class="modal" style="display:flex;">
+        <div class="modal-content glass-panel auth-modal-content">
+            <div class="modal-header" style="margin-bottom: 15px;">
+                <div style="width: 140px; height: 70px; margin: 0 auto 10px;">
+                    <img src="panafest-logo.png" alt="PANAFEST Logo" class="panafest-logo-img">
+                </div>
+                <h2><i class="fas fa-shield-halved"></i> SECURE ACCESS</h2>
+                <p>Pan-African Historical Theatre Festival</p>
+            </div>
+
+            <form id="loginForm" class="auth-form active" novalidate>
+                <h3><i class="fas fa-sign-in-alt"></i> SIGN IN</h3>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="loginEmail" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-key"></i> Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="loginPassword" placeholder="••••••••" required>
+                        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('loginPassword', this)"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+                <div style="text-align:right; margin-bottom:12px;">
+                    <a href="#" id="forgotPasswordLink" style="color:var(--gold-primary); font-size:0.85rem;">Forgot Password?</a>
+                </div>
+                <button type="submit" class="auth-btn"><i class="fas fa-sign-in-alt"></i> SIGN IN</button>
+                <p class="auth-switch">New here? <a href="#" onclick="showRegisterForm(); return false;">Create an account →</a></p>
+                <p class="auth-switch">Staff/Admin? <a href="#" onclick="showAdminLoginForm(); return false;">Admin Login →</a></p>
+            </form>
+
+            <form id="adminLoginForm" class="auth-form" novalidate>
+                <h3><i class="fas fa-shield-halved"></i> ADMIN LOGIN</h3>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Admin Email</label>
+                    <input type="email" id="adminLoginEmail" placeholder="admin@panafest.org.gh" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-key"></i> Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="adminLoginPassword" placeholder="••••••••" required>
+                        <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('adminLoginPassword', this)"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+                <button type="submit" class="auth-btn"><i class="fas fa-sign-in-alt"></i> ADMIN SIGN IN</button>
+                <p class="auth-switch">Back to <a href="#" onclick="showLoginForm(); return false;">Customer Login →</a></p>
+                <div class="demo-credentials">
+                    <strong><i class="fas fa-info-circle"></i> Demo Admin</strong>
+                    <p>Email: <code>admin@panafest.org.gh</code></p>
+                    <p>Password: <code>panafest2027admin</code></p>
+                </div>
+            </form>
+
+            <form id="registerForm" class="auth-form" novalidate>
+                <div id="regCategoryPicker" class="category-picker">
+                    <h3><i class="fas fa-user-plus"></i> CHOOSE YOUR ACCOUNT TYPE</h3>
+                    <p class="picker-hint">Tap an icon to register as that type</p>
+                    <div class="category-icons-grid" id="categoryIconsGrid"></div>
+                    <p class="auth-switch" style="margin-top:20px;">Already have an account? <a href="#" onclick="showLoginForm(); return false;">Sign In</a></p>
+                </div>
+                <div id="regFormContent" style="display:none;">
+                    <button type="button" class="back-to-category-btn" onclick="showCategoryPicker(); return false;">
+                        <i class="fas fa-arrow-left"></i> Back to categories
+                    </button>
+                    <div id="regSelectedHeader"></div>
+                    <div class="form-group"><label><i class="fas fa-user"></i> Full Name</label><input type="text" id="regName" placeholder="Your full name" required></div>
+                    <div class="form-group"><label><i class="fas fa-envelope"></i> Email</label><input type="email" id="regEmail" placeholder="you@example.com" required></div>
+                    <div class="form-group"><label><i class="fas fa-phone"></i> Phone Number</label><input type="tel" id="regPhone" placeholder="+233XXXXXXXXX" required></div>
+                    <div class="form-group"><label><i class="fas fa-globe-africa"></i> Country</label><input type="text" id="regCountry" placeholder="e.g., Ghana" required></div>
+                    <div class="form-group"><label><i class="fas fa-venus-mars"></i> Gender</label>
+                        <select id="regGender"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select>
+                    </div>
+                    <div id="regCategoryFields"></div>
+                    <div class="form-group">
+                        <label><i class="fas fa-key"></i> Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="regPassword" placeholder="••••••••" required minlength="6">
+                            <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility('regPassword', this)"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <button type="submit" class="auth-btn"><i class="fas fa-check-circle"></i> CREATE ACCOUNT</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================ MAIN APP ============================ -->
+    <div id="appContent" style="display:none;">
+
+        <div id="slidingBannerContainer" class="sliding-banner-container">
+            <div class="sliding-banner-wrapper">
+                <div class="sliding-banner" id="slidingBanner">
+                    <div class="slide active" style="background-image: url('banner1.jpg');"></div>
+                    <div class="slide" style="background-image: url('banner2.jpg');"></div>
+                    <div class="slide" style="background-image: url('banner3.jpg');"></div>
+                </div>
+            </div>
+            <button id="menuDrawerBtn" class="menu-drawer-btn"><i class="fas fa-bars"></i></button>
+            <div class="top-logo-container">
+                <img src="panafest-logo.png" alt="PANAFEST Logo" class="panafest-logo-img">
+            </div>
+            <div class="banner-header-text">
+                <div class="banner-badge">Ghana · Cape Coast · Elmina</div>
+                <h1 class="banner-title">PANAFEST 2027</h1>
+                <div class="crawler-text"><div class="crawler-content"><span>🔥 Re-emergence of African Civilization · One Africa · One People · One Destiny 🌍</span></div></div>
+            </div>
+        </div>
+
+        <div id="menuDrawer" class="menu-drawer">
+            <div class="menu-drawer-header">
+                <div class="menu-drawer-user">
+                    <i class="fas fa-user-circle"></i>
+                    <div><span id="drawerUserName">Loading...</span><span class="drawer-role-badge" id="drawerUserRole">role</span></div>
+                </div>
+                <button id="closeDrawerBtn" class="close-drawer-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="menu-drawer-body">
+                <div class="drawer-section"><h4>ACCOUNT</h4><button id="drawerLogoutBtn" class="drawer-menu-item"><i class="fas fa-sign-out-alt"></i> LOGOUT</button></div>
+                <div class="drawer-section"><h4>PREFERENCES</h4><button id="drawerDarkModeBtn" class="drawer-menu-item"><i class="fas fa-moon"></i> TOGGLE THEME</button></div>
+            </div>
+        </div>
+
+        <div class="user-bar desktop-user-bar">
+            <div class="user-info"><i class="fas fa-user-circle"></i><span id="currentUser">Loading...</span><span class="role-badge" id="userRole">role</span></div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button id="toggleDarkModeBtn" class="dark-mode-toggle-btn"><i class="fas fa-moon"></i> THEME</button>
+                <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> LOGOUT</button>
+            </div>
+        </div>
+
+        <div class="hall-title desktop-hall-title">
+            <div style="display:flex; align-items:center; gap:16px;">
+                <div style="width:100px; height:60px;">
+                    <img src="panafest-logo.png" alt="PANAFEST" class="panafest-logo-img">
+                </div>
+                <h1>EVENT MANAGEMENT PLATFORM</h1>
+            </div>
+            <div class="header-badge-group"><span class="badge"><i class="fas fa-globe-africa"></i> Ghana · 2027</span></div>
+        </div>
+
+        <div id="menuPage" class="menu-page"><div class="menu-grid" id="menuGrid"></div></div>
+
+        <div id="moduleContainer" style="display:none;">
+            <button id="backToMenuBtn" class="back-to-menu-btn"><i class="fas fa-arrow-left"></i> BACK TO DASHBOARD</button>
+
+            <div id="myRegistrationModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-id-card"></i> MY REGISTRATION</h2>
+                    <div id="regStatusBanner"></div>
+                    <div id="regProfileView"></div>
+                </div>
+            </div>
+
+            <div id="programsModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-calendar-alt"></i> PROGRAMS</h2>
+                    <div class="search-box" style="margin-bottom:16px;">
+                        <i class="fas fa-search"></i><input type="text" id="programSearch" placeholder="Search programs..."><button id="programSearchBtn"><i class="fas fa-radar"></i> FIND</button>
+                    </div>
+                    <div id="programsList" class="programs-grid"></div>
+                </div>
+            </div>
+
+            <div id="eventScheduleModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-clock"></i> EVENT SCHEDULE</h2>
+                    <p class="muted" style="margin-bottom:16px;">Multiple events per day — grouped by date with live highlighting.</p>
+                    <div id="scheduleTimeline" class="schedule-grouped"></div>
+                </div>
+            </div>
+
+            <div id="ticketingModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-ticket-alt"></i> TICKETING</h2>
+                    <div class="ticket-types-grid" id="ticketTypesGrid"></div>
+                    <h3 style="margin:24px 0 12px; color:var(--gold-primary);">MY TICKETS</h3>
+                    <div id="myTicketsList" class="ticket-list"></div>
+                </div>
+            </div>
+
+            <div id="accommodationModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-hotel"></i> ACCOMMODATION BOOKING</h2>
+                    <div id="accommodationsList" class="accom-grid"></div>
+                    <h3 style="margin:24px 0 12px; color:var(--gold-primary);">MY BOOKINGS</h3>
+                    <div id="myBookingsList"></div>
+                </div>
+            </div>
+
+            <div id="marketplaceModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-store"></i> MARKETPLACE</h2>
+                    <div class="mp-tabs">
+                        <button class="mp-tab active-mp-tab" data-mp-tab="browse"><i class="fas fa-shopping-bag"></i> Browse</button>
+                        <button class="mp-tab" data-mp-tab="post"><i class="fas fa-plus-circle"></i> Post</button>
+                        <button class="mp-tab" data-mp-tab="mylistings"><i class="fas fa-list-ul"></i> My Listings</button>
+                        <button class="mp-tab" data-mp-tab="vendors"><i class="fas fa-store-alt"></i> Vendors</button>
+                    </div>
+                    <div id="mpBrowseTab" class="mp-tab-content active-mp-content">
+                        <div class="search-box" style="margin-bottom:12px;"><i class="fas fa-search"></i><input type="text" id="mpSearch" placeholder="Search products..."><button id="mpSearchBtn"><i class="fas fa-radar"></i> FIND</button></div>
+                        <div class="mp-filter-bar">
+                            <select id="mpCategoryFilter" class="mp-select"><option value="all">All Categories</option><option value="Crafts">Crafts</option><option value="Fashion">Fashion</option><option value="Textiles">Textiles</option><option value="Art">Art</option><option value="Food">Food</option><option value="Music">Music</option><option value="Other">Other</option></select>
+                            <select id="mpSortFilter" class="mp-select"><option value="newest">Newest First</option><option value="price_low">Price: Low → High</option><option value="price_high">Price: High → Low</option></select>
+                        </div>
+                        <div id="mpProductsGrid" class="mp-products-grid"></div>
+                        <div id="mpEmptyState" class="empty-state" style="display:none;"><i class="fas fa-store-slash" style="font-size:2.5rem; color:var(--text-secondary);"></i><p>No products available yet.</p></div>
+                    </div>
+                    <div id="mpPostTab" class="mp-tab-content">
+                        <form id="mpPostForm" class="admin-form">
+                            <div class="form-row two-col">
+                                <input type="text" id="mpTitle" placeholder="Product title" required>
+                                <select id="mpCategory" required><option value="">— Category —</option><option>Crafts</option><option>Fashion</option><option>Textiles</option><option>Art</option><option>Food</option><option>Music</option><option>Other</option></select>
+                            </div>
+                            <textarea id="mpDescription" placeholder="Describe your product..." rows="3" required></textarea>
+                            <div class="form-row two-col"><input type="number" id="mpPrice" placeholder="Price (GHS)" min="0.01" step="0.01" required><input type="tel" id="mpContact" placeholder="Contact (WhatsApp)" required></div>
+                            <div class="form-group"><label style="font-size:0.7rem; text-transform:uppercase; color:var(--text-secondary);">Product Image</label><input type="file" id="mpImage" accept="image/*" style="background:transparent; border:none; padding:0;"></div>
+                            <div id="mpImagePreview" style="display:none; text-align:center; margin-bottom:12px;"><img id="mpImagePreviewImg" style="max-width:180px; max-height:180px; border-radius:12px; border:1px solid var(--glass-edge);"></div>
+                            <button type="submit" class="auth-btn"><i class="fas fa-paper-plane"></i> POST LISTING</button>
+                            <p class="muted" style="text-align:center; font-size:0.75rem; margin-top:8px;">Your listing will be reviewed by admin before appearing in the marketplace.</p>
+                        </form>
+                    </div>
+                    <div id="mpMyListingsTab" class="mp-tab-content">
+                        <div id="mpMyListingsGrid" class="mp-products-grid"></div>
+                        <div id="mpMyEmptyState" class="empty-state" style="display:none;"><i class="fas fa-box-open" style="font-size:2.5rem; color:var(--text-secondary);"></i><p>You haven't posted any listings yet.</p></div>
+                    </div>
+                    <div id="mpVendorsTab" class="mp-tab-content"><div id="mpVendorsGrid" class="mp-vendors-grid"></div></div>
+                </div>
+            </div>
+
+            <div id="mediaCenterModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-photo-video"></i> MEDIA CENTER</h2>
+                    <div class="media-tabs" id="mediaTabs">
+                        <button class="media-tab active-media-tab" data-media-tab="photos">Photos</button>
+                        <button class="media-tab" data-media-tab="videos">Videos</button>
+                        <button class="media-tab" data-media-tab="press">Press Releases</button>
+                        <button class="media-tab" data-media-tab="live">Live Stream</button>
+                    </div>
+                    <div id="mediaTabContent"></div>
+                </div>
+            </div>
+
+            <div id="heritageModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-landmark"></i> HERITAGE LEARNING CENTER</h2>
+                    <div id="heritageCategories" class="card-grid-3"></div>
+                    <div id="heritageResources" style="margin-top:20px;"></div>
+                </div>
+            </div>
+
+            <div id="diasporaModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-globe-africa"></i> DIASPORA CONNECTION HUB</h2>
+                    <p class="muted" style="margin-bottom:14px;">Connect · Collaborate · Celebrate African Heritage Worldwide</p>
+                    <div class="hub-tabs" id="hubTabs">
+                        <button class="hub-tab active-hub-tab" data-hub-tab="dashboard"><i class="fas fa-home"></i> Hub</button>
+                        <button class="hub-tab" data-hub-tab="profile"><i class="fas fa-user"></i> Profile</button>
+                        <button class="hub-tab" data-hub-tab="members"><i class="fas fa-users"></i> Members</button>
+                        <button class="hub-tab" data-hub-tab="connections"><i class="fas fa-handshake"></i> Connections</button>
+                        <button class="hub-tab" data-hub-tab="chapters"><i class="fas fa-globe"></i> Chapters</button>
+                        <button class="hub-tab" data-hub-tab="communities"><i class="fas fa-lightbulb"></i> Communities</button>
+                        <button class="hub-tab" data-hub-tab="forum"><i class="fas fa-comments"></i> Forum</button>
+                        <button class="hub-tab" data-hub-tab="messages"><i class="fas fa-envelope"></i> Messages <span class="hub-badge" id="hubMsgBadge" style="display:none;">0</span></button>
+                        <button class="hub-tab" data-hub-tab="stories"><i class="fas fa-tree"></i> Stories</button>
+                        <button class="hub-tab" data-hub-tab="business"><i class="fas fa-briefcase"></i> Business</button>
+                        <button class="hub-tab" data-hub-tab="notifications"><i class="fas fa-bell"></i> Alerts <span class="hub-badge" id="hubNotifBadge" style="display:none;">0</span></button>
+                    </div>
+                    <div id="hubContent"></div>
+                </div>
+            </div>
+
+            <div id="directoryModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-microphone-alt"></i> SPEAKER & ARTIST DIRECTORY</h2>
+                    <div id="directoryGrid" class="directory-grid"></div>
+                </div>
+            </div>
+
+            <div id="feedbackModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-clipboard-list"></i> COMPLAINTS & FEEDBACK</h2>
+                    <form id="feedbackForm" class="admin-form">
+                        <div class="form-group">
+                            <label><i class="fas fa-tags"></i> Issue Category</label>
+                            <select id="feedbackCategory" required>
+                                <option value="">Select Category</option>
+                                <option value="Event Experience">Event Experience</option>
+                                <option value="Venue & Facilities">Venue & Facilities</option>
+                                <option value="Customer Service">Customer Service</option>
+                                <option value="Accommodation">Accommodation</option>
+                                <option value="Marketplace">Marketplace</option>
+                                <option value="Technical Issues">Technical Issues</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-location-dot"></i> Location</label>
+                            <input type="text" id="feedbackLocation" placeholder="e.g. Cape Coast Castle, Main Stage..." required>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-file-alt"></i> Issue Description</label>
+                            <textarea id="feedbackDescription" rows="4" placeholder="Provide detailed description of the issue..." required></textarea>
+                        </div>
+                        <div class="form-row" style="display:flex; gap:10px;">
+                            <button type="submit" class="auth-btn"><i class="fas fa-paper-plane"></i> SUBMIT COMPLAINT</button>
+                            <button type="button" id="clearFeedbackBtn" class="auth-btn" style="background:transparent; border:1px solid var(--text-secondary);">CLEAR</button>
+                        </div>
+                        <div id="feedbackSubmitStatus" class="request-status" style="margin-top:12px;"></div>
+                    </form>
+                    <div class="student-complaints-tabs" style="margin-top:24px;">
+                        <button class="student-complaints-tab-btn active-complaints-tab" data-complaint-tab="current"><i class="fas fa-hourglass-half"></i> CURRENT COMPLAINTS</button>
+                        <button class="student-complaints-tab-btn" data-complaint-tab="history"><i class="fas fa-history"></i> COMPLAINTS HISTORY</button>
+                    </div>
+                    <div id="myComplaintsList"></div>
+                </div>
+            </div>
+
+            <div id="donationsModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-hand-holding-heart"></i> DONATIONS & SPONSORSHIP</h2>
+                    <form id="donationForm" class="admin-form">
+                        <div class="form-group"><label>Type</label><select id="donationType" required><option value="Donation">Donation</option><option value="Sponsorship">Sponsorship Package</option></select></div>
+                        <div class="form-group"><label>Amount (GHS)</label><input type="number" id="donationAmount" min="1" step="0.01" required></div>
+                        <div class="form-group"><label>Message (optional)</label><textarea id="donationMessage" rows="3"></textarea></div>
+                        <button type="submit" class="auth-btn"><i class="fas fa-heart"></i> SUBMIT</button>
+                    </form>
+                    <h3 style="margin:24px 0 12px; color:var(--gold-primary);">MY DONATIONS</h3>
+                    <div id="myDonationsList"></div>
+                </div>
+            </div>
+
+            <div id="adminUsersModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-users-cog"></i> USER MANAGEMENT</h2>
+                    <div class="user-mgmt-tabs" id="userMgmtTabs"></div>
+                    <div class="search-box" style="margin-bottom:16px;">
+                        <i class="fas fa-search"></i><input type="text" id="adminUserSearch" placeholder="Search users..."><button id="adminUserSearchBtn"><i class="fas fa-radar"></i> FIND</button>
+                    </div>
+                    <div id="userMgmtStats" class="metrics-grid" style="margin-bottom:16px;"></div>
+                    <div class="table-wrapper">
+                        <table class="panafest-table">
+                            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Category</th><th>Country</th><th>Status</th><th>Registered</th><th>Actions</th></tr></thead>
+                            <tbody id="adminUsersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminProgramsModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-calendar-plus"></i> PROGRAM MANAGEMENT</h2>
+                    <div class="admin-subsection">
+                        <h3><i class="fas fa-plus-circle"></i> Create Program</h3>
+                        <form id="adminProgramForm" class="admin-form">
+                            <div class="form-row two-col"><input type="text" id="apTitle" placeholder="Program title" required><input type="text" id="apCategory" placeholder="Category" required></div>
+                            <div class="form-row two-col"><input type="datetime-local" id="apDate" required><input type="text" id="apVenue" placeholder="Venue" required></div>
+                            <div class="form-row two-col"><input type="number" id="apIndividualPrice" placeholder="Individual Price (GHS)" min="0" step="0.01" value="100"><input type="number" id="apGroupPrice" placeholder="Group Price (GHS)" min="0" step="0.01" value="500"></div>
+                            <textarea id="apDescription" placeholder="Description" rows="3" required></textarea>
+                            <div class="form-group"><label>Program Image</label><input type="file" id="apImage" accept="image/*" style="background:transparent; border:none; padding:0;"><div id="apImagePreview" style="display:none; margin-top:8px;"><img id="apImagePreviewImg" style="max-width:150px; border-radius:8px; border:1px solid var(--glass-edge);"></div></div>
+                            <div class="form-group"><label>Previous Editions Videos (one URL per line)</label><textarea id="apVideos" placeholder="https://www.youtube.com/embed/VIDEO_ID" rows="2"></textarea></div>
+                            <button type="submit" class="auth-btn"><i class="fas fa-plus"></i> CREATE PROGRAM</button>
+                        </form>
+                    </div>
+                    <div class="admin-subsection"><h3><i class="fas fa-list"></i> All Programs</h3><div id="adminProgramsList" class="card-grid-3"></div></div>
+                    <div class="admin-subsection"><h3><i class="fas fa-user-check"></i> Program Registrations</h3><div class="table-wrapper"><table class="panafest-table"><thead><tr><th>Reference</th><th>Program</th><th>User</th><th>Type</th><th>Qty</th><th>Amount</th><th>Payment</th><th>Date</th></tr></thead><tbody id="adminProgramRegistrationsBody"></tbody></table></div></div>
+                </div>
+            </div>
+
+            <div id="adminEventScheduleModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-clock"></i> EVENT SCHEDULE MANAGEMENT</h2>
+                    <div class="admin-subsection">
+                        <h3><i class="fas fa-plus-circle"></i> Add New Event</h3>
+                        <form id="adminEventForm" class="admin-form">
+                            <div class="form-row two-col"><input type="text" id="aeTitle" placeholder="Event title" required><input type="datetime-local" id="aeDate" required></div>
+                            <div class="form-row two-col"><input type="text" id="aeVenue" placeholder="Venue" required><input type="text" id="aeDescription" placeholder="Short description"></div>
+                            <button type="submit" class="auth-btn"><i class="fas fa-plus"></i> ADD EVENT</button>
+                        </form>
+                    </div>
+                    <div class="admin-subsection"><h3><i class="fas fa-list"></i> All Events (grouped by day)</h3><div id="adminEventScheduleList"></div></div>
+                </div>
+            </div>
+
+            <div id="adminTicketsModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-ticket-alt"></i> TICKET MANAGEMENT</h2>
+                    <div id="adminTicketsStats" class="metrics-grid"></div>
+                    <div class="admin-subsection"><h3><i class="fas fa-ticket"></i> All Tickets</h3><div class="table-wrapper"><table class="panafest-table"><thead><tr><th>ID</th><th>Holder</th><th>Type</th><th>Status</th><th>Issued</th><th>Actions</th></tr></thead><tbody id="adminTicketsBody"></tbody></table></div></div>
+                    <div class="admin-subsection"><h3><i class="fas fa-exchange-alt"></i> Payment Transactions</h3><div class="table-wrapper"><table class="panafest-table"><thead><tr><th>Ref</th><th>User</th><th>Item</th><th>Amount</th><th>Method</th><th>Mobile</th><th>Status</th><th>Date</th></tr></thead><tbody id="adminTransactionsBody"></tbody></table></div></div>
+                </div>
+            </div>
+
+            <div id="adminAccommodationModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-hotel"></i> ACCOMMODATION MANAGEMENT</h2>
+                    <div class="admin-subsection">
+                        <h3><i class="fas fa-plus-circle"></i> Add Accommodation</h3>
+                        <form id="adminAccommodationForm" class="admin-form">
+                            <div class="form-row two-col"><input type="text" id="aaName" placeholder="Name" required><select id="aaType" required><option value="">— Type —</option><option>Hotel</option><option>Guesthouse</option><option>Resort</option><option>Homestay</option></select></div>
+                            <div class="form-row two-col"><input type="text" id="aaLocation" placeholder="Location" required><input type="number" id="aaPrice" placeholder="Price per night (GHS)" min="1" step="0.01" required></div>
+                            <div class="form-row two-col"><input type="number" id="aaRooms" placeholder="Rooms available" min="1" required><input type="text" id="aaContact" placeholder="Contact" required></div>
+                            <textarea id="aaDescription" placeholder="Description" rows="2"></textarea>
+                            <div class="form-group"><label>Main Image</label><input type="file" id="aaImage" accept="image/*" style="background:transparent; border:none; padding:0;"><div id="aaImagePreview" style="display:none; margin-top:8px;"><img id="aaImagePreviewImg" style="max-width:150px; border-radius:8px; border:1px solid var(--glass-edge);"></div></div>
+                            <div class="form-group"><label>Gallery Images (multiple)</label><input type="file" id="aaGallery" accept="image/*" multiple style="background:transparent; border:none; padding:0;"><div id="aaGalleryPreview" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;"></div></div>
+                            <div class="form-group"><label>Room Tour Videos (one URL per line)</label><textarea id="aaVideos" placeholder="https://www.youtube.com/embed/VIDEO_ID" rows="2"></textarea></div>
+                            <button type="submit" class="auth-btn"><i class="fas fa-plus"></i> ADD ACCOMMODATION</button>
+                        </form>
+                    </div>
+                    <div class="admin-subsection"><h3><i class="fas fa-list"></i> All Accommodations</h3><div id="adminAccommodationList"></div></div>
+                    <div class="admin-subsection"><h3><i class="fas fa-calendar-check"></i> All Bookings</h3><div class="table-wrapper"><table class="panafest-table"><thead><tr><th>ID</th><th>User</th><th>Property</th><th>Type</th><th>Nights</th><th>Rooms</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody id="adminBookingsBody"></tbody></table></div></div>
+                </div>
+            </div>
+
+            <div id="adminMarketplaceModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-store"></i> MARKETPLACE MANAGEMENT</h2>
+                    <div class="admin-subsection">
+                        <h3><i class="fas fa-plus-circle"></i> Add Vendor</h3>
+                        <form id="adminVendorForm" class="admin-form">
+                            <div class="form-row two-col"><input type="text" id="avName" placeholder="Vendor name" required><input type="text" id="avOwner" placeholder="Owner name" required></div>
+                            <div class="form-row two-col"><input type="text" id="avCategory" placeholder="Category" required><input type="text" id="avContact" placeholder="Contact" required></div>
+                            <textarea id="avDescription" placeholder="Shop description" rows="2"></textarea>
+                            <div class="form-group"><label>Shop Image</label><input type="file" id="avImage" accept="image/*" style="background:transparent; border:none; padding:0;"><div id="avImagePreview" style="display:none; margin-top:8px;"><img id="avImagePreviewImg" style="max-width:150px; border-radius:8px; border:1px solid var(--glass-edge);"></div></div>
+                            <button type="submit" class="auth-btn"><i class="fas fa-plus"></i> ADD VENDOR</button>
+                        </form>
+                    </div>
+                    <div class="admin-subsection">
+                        <h3><i class="fas fa-box"></i> Add Product to Vendor</h3>
+                        <form id="adminProductForm" class="admin-form">
+                            <div class="form-row two-col"><select id="apVendorSelect" required><option value="">— Select Vendor —</option></select><select id="apProductCategory" required><option value="">— Category —</option><option>Crafts</option><option>Fashion</option><option>Textiles</option><option>Art</option><option>Food</option><option>Music</option><option>Other</option></select></div>
+                            <div class="form-row two-col"><input type="text" id="apProductTitle" placeholder="Product title" required><input type="number" id="apProductPrice" placeholder="Price (GHS)" min="0.01" step="0.01" required></div>
+                            <textarea id="apProductDesc" placeholder="Description" rows="2" required></textarea>
+                            <div class="form-row two-col"><input type="tel" id="apProductContact" placeholder="Seller Contact (WhatsApp)" required><div><label style="font-size:0.7rem; color:var(--text-secondary);">Product Image</label><input type="file" id="apProductImage" accept="image/*" style="background:transparent; border:none; padding:0;"></div></div>
+                            <div id="apProductImagePreview" style="display:none; margin-bottom:12px;"><img id="apProductImagePreviewImg" style="max-width:150px; border-radius:8px; border:1px solid var(--glass-edge);"></div>
+                            <button type="submit" class="auth-btn"><i class="fas fa-plus"></i> ADD PRODUCT</button>
+                        </form>
+                    </div>
+                    <div class="admin-subsection"><h3><i class="fas fa-store-alt"></i> All Vendors</h3><div id="adminVendorsList"></div></div>
+                    <div class="admin-subsection"><h3><i class="fas fa-check-double"></i> Product Approvals</h3><div id="adminProductsList"></div></div>
+                </div>
+            </div>
+
+            <div id="adminMediaModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-photo-video"></i> MEDIA CENTER MANAGEMENT</h2>
+                    <div class="admin-subsection">
+                        <h3><i class="fas fa-plus-circle"></i> Add Media</h3>
+                        <form id="adminMediaForm" class="admin-form">
+                            <div class="form-row two-col"><select id="amType" required><option value="">— Type —</option><option value="photo">Photo</option><option value="video">Video</option><option value="press">Press Release</option></select><input type="text" id="amTitle" placeholder="Title" required></div>
+                            <div class="form-row two-col"><input type="url" id="amUrl" placeholder="Media URL" required><input type="text" id="amDescription" placeholder="Description (optional)"></div>
+                            <button type="submit" class="auth-btn"><i class="fas fa-plus"></i> ADD MEDIA</button>
+                        </form>
+                    </div>
+                    <div class="admin-subsection"><h3><i class="fas fa-list"></i> All Media</h3><div id="adminMediaList"></div></div>
+                </div>
+            </div>
+
+            <div id="adminDirectoryModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-microphone-alt"></i> SPEAKERS & ARTISTS</h2>
+                    <div class="admin-subsection">
+                        <h3><i class="fas fa-plus-circle"></i> Add Profile</h3>
+                        <form id="adminDirectoryForm" class="admin-form">
+                            <div class="form-row two-col"><input type="text" id="adName" placeholder="Full name" required><select id="adRole" required><option value="">— Role —</option><option value="Artist">Artist</option><option value="Speaker">Speaker</option><option value="Performer">Performer</option></select></div>
+                            <div class="form-row two-col"><input type="text" id="adCountry" placeholder="Country" required><input type="text" id="adGenre" placeholder="Genre / Field"></div>
+                            <textarea id="adBio" placeholder="Biography" rows="3" required></textarea>
+                            <div class="form-group"><label>Profile Image</label><input type="file" id="adImage" accept="image/*" style="background:transparent; border:none; padding:0;"><div id="adImagePreview" style="display:none; margin-top:8px;"><img id="adImagePreviewImg" style="max-width:150px; border-radius:8px; border:1px solid var(--glass-edge);"></div></div>
+                            <div class="form-group"><label>Videos (one URL per line)</label><textarea id="adVideos" rows="2"></textarea></div>
+                            <div class="form-group"><label>Music / Audio URLs (one per line)</label><textarea id="adMusic" rows="2"></textarea></div>
+                            <button type="submit" class="auth-btn"><i class="fas fa-plus"></i> ADD PROFILE</button>
+                        </form>
+                    </div>
+                    <div class="admin-subsection"><h3><i class="fas fa-list"></i> All Profiles</h3><div id="adminDirectoryList"></div></div>
+                </div>
+            </div>
+
+            <div id="adminHeritageModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-landmark"></i> HERITAGE CENTER MANAGEMENT</h2>
+                    <div class="admin-subsection">
+                        <h3><i class="fas fa-plus-circle"></i> Add Resource</h3>
+                        <form id="adminHeritageForm" class="admin-form">
+                            <div class="form-row two-col">
+                                <select id="ahCategory" required>
+                                    <option value="">— Category —</option>
+                                    <option>PANAFEST History</option><option>African History</option>
+                                    <option>Documentaries</option><option>Museum</option>
+                                    <option>Masterclasses</option>
+                                </select>
+                                <input type="text" id="ahTitle" placeholder="Resource title" required>
+                            </div>
+                            <textarea id="ahDescription" placeholder="Description" rows="3" required></textarea>
+                            <input type="url" id="ahUrl" placeholder="Resource URL (optional)">
+                            <button type="submit" class="auth-btn"><i class="fas fa-plus"></i> ADD RESOURCE</button>
+                        </form>
+                    </div>
+                    <div class="admin-subsection"><h3><i class="fas fa-list"></i> All Resources</h3><div id="adminHeritageList"></div></div>
+                </div>
+            </div>
+
+            <div id="adminComplaintsModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-clipboard-list"></i> COMPLAINTS MANAGEMENT</h2>
+                    <div class="complaints-tabs" id="adminComplaintsTabs">
+                        <button class="complaints-tab-btn active-complaints-tab" data-status="all">ALL COMPLAINTS</button>
+                        <button class="complaints-tab-btn" data-status="pending">PENDING</button>
+                        <button class="complaints-tab-btn" data-status="acknowledged">ACKNOWLEDGED</button>
+                        <button class="complaints-tab-btn" data-status="in progress">IN PROGRESS</button>
+                        <button class="complaints-tab-btn" data-status="resolved">RESOLVED</button>
+                        <button class="complaints-tab-btn" data-status="rejected">REJECTED</button>
+                    </div>
+                    <div class="search-box" style="margin-bottom:16px;">
+                        <i class="fas fa-search"></i><input type="text" id="adminComplaintsSearch" placeholder="Search by user, email, location, ID..."><button id="adminComplaintsSearchBtn"><i class="fas fa-radar"></i> SEARCH</button>
+                    </div>
+                    <div class="table-wrapper" style="max-height:520px;">
+                        <table class="panafest-table">
+                            <thead><tr><th>ID</th><th>User</th><th>Email</th><th>Category</th><th>Description</th><th>Location</th><th>Status</th><th>Submitted</th><th>Acknowledged By</th><th>Est. Fix Time</th><th>Updates</th><th>Action</th></tr></thead>
+                            <tbody id="adminComplaintsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminReportsModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-chart-line"></i> REPORTS & ANALYTICS</h2>
+                    <div id="reportsMetrics" class="metrics-grid"></div>
+                    <div class="chart-grid">
+                        <div class="chart-card"><h3>Registrations by Category</h3><canvas id="chartRegistrations"></canvas></div>
+                        <div class="chart-card"><h3>Ticket Sales</h3><canvas id="chartTickets"></canvas></div>
+                        <div class="chart-card"><h3>Donations Over Time</h3><canvas id="chartDonations"></canvas></div>
+                        <div class="chart-card"><h3>Programs</h3><canvas id="chartPrograms"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adminDiasporaHubModule" class="module-content" style="display:none;">
+                <div class="glass-panel">
+                    <h2 class="module-heading"><i class="fas fa-globe-africa"></i> DIASPORA HUB MANAGEMENT</h2>
+                    <div class="hub-tabs" id="adminHubTabs">
+                        <button class="hub-tab active-hub-tab" data-admin-hub-tab="members"><i class="fas fa-users"></i> Members</button>
+                        <button class="hub-tab" data-admin-hub-tab="chapters"><i class="fas fa-globe"></i> Chapters</button>
+                        <button class="hub-tab" data-admin-hub-tab="communities"><i class="fas fa-lightbulb"></i> Communities</button>
+                        <button class="hub-tab" data-admin-hub-tab="forum"><i class="fas fa-comments"></i> Forum</button>
+                        <button class="hub-tab" data-admin-hub-tab="reports"><i class="fas fa-flag"></i> Reports</button>
+                        <button class="hub-tab" data-admin-hub-tab="analytics"><i class="fas fa-chart-line"></i> Analytics</button>
+                    </div>
+                    <div id="adminHubContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="detailPageContainer" style="display:none;">
+            <button id="backFromDetailBtn" class="back-to-menu-btn" onclick="closeDetailPage()"><i class="fas fa-arrow-left"></i> BACK</button>
+            <div id="detailPageContent"></div>
+        </div>
+
+        <div class="footer-note"><i class="fas fa-drum"></i> PANAFEST Event Management Platform · Powered by Ghana Elearn</div>
+    </div>
+
+    <div id="confirmModal" class="modal" style="display:none; z-index:3000;">
+        <div class="modal-content glass-panel" style="max-width:420px;">
+            <div class="modal-header"><h2 style="color:var(--danger-glow);"><i class="fas fa-exclamation-triangle"></i> CONFIRM</h2></div>
+            <p id="confirmMessage" style="text-align:center; margin:20px 0;">Are you sure?</p>
+            <div class="form-row" style="display:flex; gap:10px;">
+                <button id="confirmYesBtn" class="auth-btn" style="background:var(--danger-glow); color:#fff;">CONFIRM</button>
+                <button id="confirmNoBtn" class="auth-btn" style="background:transparent; border:1px solid var(--text-secondary);">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminEditModal" class="modal" style="display:none; z-index:4000;">
+        <div class="modal-content glass-panel" style="max-width:680px; max-height:92vh; overflow-y:auto; position:relative;">
+            <button id="closeAdminEditBtn" style="position:absolute; top:12px; right:16px; background:transparent; border:none; color:var(--text-secondary); font-size:1.8rem; cursor:pointer;">&times;</button>
+            <div class="modal-header" style="text-align:left; padding-bottom:12px; margin-bottom:16px; border-bottom:1px solid var(--glass-edge);">
+                <h2 id="adminEditModalTitle" style="color:var(--gold-primary); font-size:1.2rem;">Edit</h2>
+            </div>
+            <div id="adminEditModalBody"></div>
+        </div>
+    </div>
+
+    <div id="complaintUpdateModal" class="modal" style="display:none; z-index:4000;">
+        <div class="modal-content glass-panel" style="max-width:520px; max-height:92vh; overflow-y:auto;">
+            <div class="modal-header"><h2><i class="fas fa-pen"></i> UPDATE COMPLAINT STATUS</h2></div>
+            <input type="hidden" id="updateComplaintId">
+            <div class="form-group">
+                <label><i class="fas fa-check-circle"></i> Acknowledge Status</label>
+                <select id="complaintAcknowledge">
+                    <option value="pending">Pending</option>
+                    <option value="acknowledged">Acknowledged</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-clock"></i> Estimated Fix Time</label>
+                <input type="datetime-local" id="complaintEstFixTime">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-info-circle"></i> Update Message</label>
+                <textarea id="complaintUpdateMessage" rows="3" placeholder="Add update about the complaint status..."></textarea>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-flag-checkered"></i> Overall Status</label>
+                <select id="complaintOverallStatus">
+                    <option value="pending">Pending</option>
+                    <option value="acknowledged">Acknowledged</option>
+                    <option value="in progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+            <div class="form-row" style="display:flex; gap:10px;">
+                <button id="submitComplaintUpdateBtn" class="auth-btn"><i class="fas fa-save"></i> SAVE UPDATE</button>
+                <button id="closeComplaintUpdateBtn" class="auth-btn" style="background:transparent; border:1px solid var(--danger-glow); color:var(--danger-glow);">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mediaLightbox" class="modal" style="display:none; z-index:3100;">
+        <div class="modal-content" style="background:transparent; box-shadow:none; max-width:90vw; max-height:90vh;">
+            <button id="closeMediaLightboxBtn" style="position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.7); color:white; border:none; width:50px; height:50px; font-size:1.8rem; border-radius:50%; cursor:pointer;">&times;</button>
+            <img id="mediaLightboxImg" src="" alt="Preview" style="max-width:90vw; max-height:90vh; border-radius:16px; display:none;">
+            <video id="mediaLightboxVideo" controls style="display:none; max-width:90vw; max-height:90vh; border-radius:16px;"></video>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
